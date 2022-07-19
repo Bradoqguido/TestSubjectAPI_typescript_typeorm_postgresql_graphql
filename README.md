@@ -1,4 +1,4 @@
-# TestSubject API
+# About TestSubject API
 
 This API is a way to learn how to use and improve my knowledge about many things like:
 - RestAPIs;
@@ -12,9 +12,7 @@ This API is a way to learn how to use and improve my knowledge about many things
 # How to Use
 To use this API, first you need to run `npm install` to install all the dependencies.
 
-Change the parameters from `ormconfig.ts` at `src\ormconfig.ts`.
-
-And run the SQLs from `database-setup.sql` to create the tables and relationships.
+And change the parameters from `ormconfig.ts` at `src\ormconfig.ts`.
 
 ## Configure your .env file
 Your .env file needs to be like these one above:
@@ -42,6 +40,9 @@ Just type `npm run dev` in your console to run the API in development mode.
 
 Type `npm run start` in your console to run the API in production mode.
 
+## Insert some data to test
 
-## More info
+To insert some data to test you can run the scripts of the `insertDataIntoDatabase.sql` file.
+
+# More info
 See [TypeORM Entities](https://typeorm.io/entities) to understand more about the called entities on models.

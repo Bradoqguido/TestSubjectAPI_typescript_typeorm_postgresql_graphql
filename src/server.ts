@@ -2,6 +2,7 @@ import { RouteController } from './controllers/router';
 import express from 'express';
 import 'reflect-metadata';
 import * as TypeORM from 'typeorm';
+require('dotenv').config();
 const cors = require('cors');
 
 class Server {
@@ -16,7 +17,7 @@ class Server {
 
   private async configuration() {
     try {
-      this.app.set('port', process.env.APP_PORT || 3000);
+      this.app.set('port', process.env.APP_PORT);
 
       this.app.use(cors({
         origin: '*',

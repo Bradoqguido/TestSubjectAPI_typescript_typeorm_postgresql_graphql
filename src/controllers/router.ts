@@ -20,6 +20,7 @@ export class RouteController {
             res.send('Server opened');
         });
 
+        //app.use('/login', this.authController.router);
         app.use('/api/user/', this.userController.router);
         app.use('/api/category/', this.categoryController.router);
         app.use('/api/product/', this.productController.router);

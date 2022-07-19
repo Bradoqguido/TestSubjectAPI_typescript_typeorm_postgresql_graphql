@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { checkJwt } from '../middlewares/checkJwt';
 import { ProductService } from '../services/product.service';
 
 export class ProductController {
@@ -28,9 +29,9 @@ export class ProductController {
     }
 
     private routes() {
-        this.router.get('/', this.index);
-        this.router.post('/', this.create);
-        this.router.put('/:id', this.update);
-        this.router.delete('/:id', this.delete);
+        this.router.get('/', [checkJwt], this.index);
+        this.router.post('/', [checkJwt], this.create);
+        this.router.put('/:id', [checkJwt], this.update);
+        this.router.delete('/:id', [checkJwt], this.delete);
     }
 }
