@@ -7,10 +7,15 @@
     "module": "commonjs",
     "esModuleInterop": true,
     "target": "ES6",
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "rootDir": "src",
-    "outDir": "dist"
+    "moduleResolution": "node" /* Specify module resolution strategy: 'node' (Node.js) or 'classic' (TypeScript pre-1.6). */,
+    "sourceMap": true /* Generates corresponding '.map' file. */,
+    "rootDir": "src" /* Specify the root directory of input files. Use to control the output directory structure with --outDir. */,
+    "outDir": "dist" /* Redirect output to the directory. */,
+    "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
+    "emitDecoratorMetadata": true /* Enables experimental support for emitting type metadata for decorators. */,
   },
+  "compileOnSave": true,
+  "exclude": ["node_modules"],
+  "include": ["src/**/*.ts", "./ormconfig.ts"],
   "lib": ["es2015"]
 }

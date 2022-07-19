@@ -1,5 +1,8 @@
 import { RouteController } from './controllers/router';
-import express, { Router, Request, Response } from 'express';
+import express from 'express';
+import "reflect-metadata";
+import { Container } from "typedi";
+import * as TypeORM from "typeorm";
 
 class Server {
   private app: express.Application;
@@ -11,8 +14,14 @@ class Server {
     this.setupRoutes();
   }
 
-  private configuration() {
-    this.app.set('port', process.env.PORT || 3000);
+  private async configuration() {
+    try {
+      this.app.set('port', process.env.PORT || 3000);
+      await TypeORM.createConnection();
+    } catch (error) {
+      console.log(error);
+      
+    }
   }
 
   private setupRoutes() {
