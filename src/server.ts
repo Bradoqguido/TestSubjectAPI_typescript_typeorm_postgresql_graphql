@@ -1,8 +1,8 @@
 import { RouteController } from './controllers/router';
 import express from 'express';
-import "reflect-metadata";
-import { Container } from "typedi";
-import * as TypeORM from "typeorm";
+import 'reflect-metadata';
+import * as TypeORM from 'typeorm';
+const cors = require('cors');
 
 class Server {
   private app: express.Application;
@@ -16,8 +16,15 @@ class Server {
 
   private async configuration() {
     try {
-      this.app.set('port', process.env.PORT || 3000);
+      this.app.set('port', process.env.APP_PORT || 3000);
+
+      this.app.use(cors({
+        origin: '*',
+        methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH']
+      }));
+
       await TypeORM.createConnection();
+
     } catch (error) {
       console.log(error);
       
