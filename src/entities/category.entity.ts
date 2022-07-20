@@ -1,5 +1,5 @@
-import { Product } from './product.model';
-import { User } from './user.model';
+import { Product } from './product.entity';
+import { User } from './user.entity';
 import { Field, ObjectType } from "type-graphql";
 import {
     Entity,
@@ -34,9 +34,9 @@ export class Category {
     public updateAt!: Date;
 
     @Field((_type) => Number)
-    @OneToOne((_type) => User, (category: Category) => category.userId)
-    @JoinColumn({ name: 'userId' })
-    public userId!: number;
+    @OneToOne((_type) => User, (category: Category) => category.createdBy)
+    @JoinColumn({ name: 'createdBy' })
+    public createdBy!: number;
 
     @Field((_type) => [Product])
     @OneToMany((_type) => Product, (product: Product) => product.productId)

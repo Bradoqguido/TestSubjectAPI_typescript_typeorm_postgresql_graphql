@@ -11,5 +11,5 @@ module.exports = {
     logging: "all",
     cache: true,
     dropSchema: false,
-    entities: ["src/models/*.ts"],
+    entities: ["src/entities/*.ts"],
   };

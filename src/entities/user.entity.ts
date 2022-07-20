@@ -1,6 +1,8 @@
-import { Category } from './category.model';
+import { Product } from './product.entity';
+import { Category } from './category.entity';
 import { Field, ObjectType } from "type-graphql";
-import { Product } from './product.model';
+import * as bcrypt from "bcryptjs";
+import { Length, IsNotEmpty } from "class-validator";
 import {
     Entity,
     Unique,
@@ -19,13 +21,14 @@ export enum RoleEnumType {
 
 @ObjectType()
 @Entity('users')
-@Unique(["userId"])
+@Unique(["email"])
 export class User {
     @Field((_type) => Number)
     @PrimaryGeneratedColumn()
     public readonly userId!: number;
 
     @Field()
+    @Length(4, 20)
     @Column({type: 'varchar'})
     public userName!: string;
     
@@ -35,10 +38,12 @@ export class User {
     public email!: string;
 
     @Field()
+    @Length(8, 100)
     @Column({type: 'varchar'})
     public password!: string;
 
     @Field()
+    @IsNotEmpty()
     @Column({
         type: 'enum',
         enum: RoleEnumType,
@@ -61,14 +66,22 @@ export class User {
     public verified!: boolean;
 
     @Field((_type) => [Category])
-    @OneToMany((_type) => Category, (category: Category) => category.userId)
+    @OneToMany((_type) => Category, (category: Category) => category.createdBy)
     public category!: Category[];
 
     @Field((_type) => [Product])
-    @OneToMany((_type) => Product, (product: Product) => product.userId)
+    @OneToMany((_type) => Product, (product: Product) => product.createdBy)
     public product!: Product[];
 
     toJSON() {
         return { ...this, password: undefined, verified: undefined };
+    }
+
+    hashPassword() {
+        this.password = bcrypt.hashSync(this.password, 8);
+    }
+
+    checkIfPasswordIsValid(unencryptedPassword: string) {
+        return bcrypt.compareSync(unencryptedPassword, this.password);
     }
 }
