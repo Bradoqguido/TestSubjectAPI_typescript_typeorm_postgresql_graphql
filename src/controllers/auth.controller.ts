@@ -1,96 +1,91 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const config = require('../config/config');
+import { validate } from 'class-validator';
+import { Router, Request, Response } from 'express';
+import * as jwt from "jsonwebtoken";
+import { getRepository } from "typeorm";
+require('dotenv').config();
+import { User } from "../entities/user.entity";
 
-// ==> Método responsável por criar um novo 'Login':
-exports.login = async (req, res, next) => {
-    try {
-      const { email, password } = req.body;
-      const { rows } = await db.query("SELECT idperson, name, photourl, password FROM PUBLIC.PERSON WHERE EMAIL LIKE '" + email + "';");
+export class AuthController {
+  public router: Router;
 
-      // If user not exists
-      if (rows.length <= 0) {
-        res.status(204).send();
-        return;
-      }
-        
-      // Compare the password (digited and saved) with promisse
-      bcrypt.compare(password, rows[0].password).then(match => {
-        if(!match)
-          return res.status(400).send({ error: 'Invalid password!'});
-
-        // Create a JWT token with user id and the secret
-        const token = jwt.sign({ id: rows[0].idperson }, config.secret, {
-          expiresIn: 86400,
-        });
-
-        return res.status(200).send({ idperson: rows[0].idperson, name: rows[0].name, photourl: rows[0].photourl, email, auth: true, token });
-      });
-
-    } catch (error) {
-      return res.status(400).send({ error: 'Authentication failed!'});
-    }
-}
-
-exports.logout = (req, res) => {
-    res.status(200).json({auth: false, token: null});
-}
-
-exports.register = async (req, res) => {
-  const { username, email, password, photourl, provideruid, providername } = req.body;
-  try {
-    const { rows } = await db.query("SELECT idperson FROM PUBLIC.PERSON WHERE EMAIL LIKE '" + email +"';");
-
-    // If user exists
-    if (rows.length > 0)
-      return res.status(200).send({ message: 'User already exists' });
-
-    const encryptedPassword = await bcrypt.hash(password, 10);
-    
-    // If user not exists, insert him
-    await db.query(`INSERT INTO PUBLIC.PERSON(name, email, password, photourl, provideruid, providername, createdat) 
-                    VALUES ('${username}', '${email}', '${encryptedPassword}', '${photourl}', '${provideruid}', '${providername}', now());`);
-
-    return res.status(201).send({ message: 'User ' + username + ' registered!' });
-  } catch (error) {
-    return res.status(400).send({ error, message: 'Registration failed!' });
+  constructor() {
+      this.router = Router();
+      this.routes();
   }
-}
 
-exports.verifyJWT = (req, res, next) => {
-  const token = req.headers['x-access-token'];
-  if (!token) 
-    return res.status(200).json({ auth: false, message: 'No token provided.' });
-  
-  jwt.verify(token, config.secret, function(err, decoded) {
-    if (err) return res.status(200).json({ auth: false, message: 'Failed to authenticate token.' });
-    
-    // se tudo estiver ok, salva no request para uso posterior
-    req.idperson = decoded.id;
-    next();
-  });
-}
+  private login = async (req: Request, res: Response) => {
+    let { userName, password } = req.body;
 
-/**
- * # Update an user.
- * @param {any} req Request data, that contains the requisition body.
- * @param {any} res Response to frontend.
- */
-exports.update = async (req: Request, res: Response) => {
-  const { idperson, username, email, photourl, password } = req.body;
-  try {
-    const { rows } = await db.query("SELECT idperson FROM PUBLIC.PERSON WHERE EMAIL LIKE '" + email +"';");
+    // Check if has username and password.
+    if (!(userName && password)) {
+      res.status(400).send('Please, type your username and password.');
+      return;
+    }
 
-    // If user exists
-    if (rows.length <= 0)
-      return res.status(200).send({ message: 'User not exists!' });
+    try {
+      // Get user from database.
+      const userRepository = getRepository(User);
+      let user: User;
+      user = await userRepository.findOneOrFail({ where: { userName } });
 
-    const encryptedPassword = await bcrypt.hash(password, 10);
-    
-    await db.query(`UPDATE PUBLIC.PERSON SET name = '${username}', email = '${email}', password = '${encryptedPassword}', photourl = '${photourl}' WHERE idperson = ${idperson};`);
+      if (!user.checkIfPasswordIsValid(password)) {
+        throw new Error("Incorrect username or password.");
+      }
 
-    return res.status(200).send({ message: 'User updated!' });
-  } catch (error) {
-    return res.status(400).send({ error, message: 'User update failed!' });
+      // Sing a jwt that is valid for one hour.
+      const token = jwt.sign(
+        { userId: user.userId, userName: user.userName },
+        process.env.APP_SECRET!,
+        { expiresIn: '1h' }
+      );
+
+      // Send the jwt in the response.
+      res.send(token);
+    } catch (error) {
+      res.status(401).send(error);
+    }
+  }
+
+  private changePassword = async (req: Request, res: Response) => {
+    // get the userId from jwt payload.
+    const userId = res.locals.jwtPayload.userId;
+      
+    const { oldPassword, newPassword } = req.body;
+    if (!(oldPassword && newPassword)) {
+      res.status(400).send("Please, type your old password and the new password");
+      return;
+    }
+
+    // Get user from database.
+    const userRepository = getRepository(User);
+    let user!: User;
+    try {
+      user = await userRepository.findOneOrFail({ where: { userId } });
+      
+      if (!user.checkIfPasswordIsValid(oldPassword)) {
+        throw new Error();
+      }
+    } catch (error) {
+      res.status(401).send();
+    }
+
+    // Validate entity.
+    user.password = newPassword;
+    const errors = await validate(user);
+    if (errors.length > 0) {
+      res.status(400).send(errors);
+      return;
+    }
+
+    // Hash the new password and save.
+    user.hashPassword();
+    userRepository.save(user);
+
+    res.status(204).send();
+  }
+
+  private routes() {
+      this.router.post('/login', this.login);
+      this.router.post('/changePassword/:id', this.changePassword);
   }
 }
